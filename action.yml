@@ -1,0 +1,28 @@
+name: 'gitea-action-rerun'
+description: 'rerun gitea action'
+author: 'nazo6'
+
+inputs:
+  gitea_awesome:
+    description: 'gitea_awesome cookie value'
+    required: true
+  gitea_incredible:
+    description: 'gitea_incredible cookie value'
+    required: true
+  gitea_instance:
+    description: 'gitea instance url'
+    required: true
+  gitea_repo:
+    description: 'gitea repository'
+    required: true
+  workflow_file:
+    description: 'workflow file name'
+    required: true
+
+outputs:
+  time:
+    description: 'Your output description here'
+
+runs:
+  using: node16
+  main: dist/index.js
