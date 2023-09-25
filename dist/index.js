@@ -13939,7 +13939,7 @@ async function rerun(auth, gitea_instance, gitea_repo, workflow_file) {
     }
     cookie._csrf = csrf_token;
     const $ = cheerio.load(await run_list_page_res.text());
-    const RUN_PAGE_URL = $(".issue.list li:first-of-type .issue-item-top-row a").attr("href");
+    const RUN_PAGE_URL = $('.actions a[href*="actions/runs/"]').attr("href");
     if (!RUN_PAGE_URL) {
         throw new Error("No run found");
     }
