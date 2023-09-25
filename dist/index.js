@@ -13783,72 +13783,162 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const core = __importStar(__nccwpck_require__(8434));
-const cheerio_1 = __nccwpck_require__(1104);
+const login_1 = __nccwpck_require__(7404);
+const rerun_1 = __nccwpck_require__(6194);
 main();
 async function main() {
-    const gitea_awesome = core.getInput("gitea_awesome", { required: true });
+    const gitea_awesome = core.getInput("gitea_awesome", { required: false });
     const gitea_incredible = core.getInput("gitea_incredible", {
-        required: true,
+        required: false,
+    });
+    const gitea_username = core.getInput("gitea_username", { required: false });
+    const gitea_password = core.getInput("gitea_password", {
+        required: false,
     });
     const gitea_instance = core.getInput("gitea_instance", { required: true });
     const gitea_repo = core.getInput("gitea_repo", { required: true });
     const workflow_file = core.getInput("workflow_file", { required: true });
-    await rerun({ gitea_awesome, gitea_incredible }, gitea_instance, gitea_repo, workflow_file);
+    let auth;
+    if (gitea_awesome !== "" && gitea_incredible !== "") {
+        auth = await (0, login_1.login)(gitea_awesome, gitea_incredible, gitea_instance);
+    }
+    else if (gitea_username !== "" && gitea_password !== "") {
+        auth = await (0, login_1.login_by_pass)(gitea_username, gitea_password, gitea_instance);
+    }
+    else {
+        throw Error("No valid auth info provided");
+    }
+    await (0, rerun_1.rerun)(auth, gitea_instance, gitea_repo, workflow_file);
 }
-function cookieToString(cookie) {
-    return Object.entries(cookie)
-        .map(([k, v]) => `${k}=${v}`)
-        .join("; ");
+
+
+/***/ }),
+
+/***/ 7404:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.login = exports.login_by_pass = void 0;
+const utils_1 = __nccwpck_require__(2303);
+async function login_by_pass(username, password, gitea_instance) {
+    const LOGIN_PAGE_URL = `${gitea_instance}/user/login`;
+    const page_res = await fetch(gitea_instance, {
+        redirect: "manual",
+    });
+    await page_res.text();
+    const temp_cookies = (0, utils_1.parseSetCookie)(page_res.headers.getSetCookie());
+    const i_like_gitea = temp_cookies.i_like_gitea;
+    const csrf_token = temp_cookies._csrf;
+    if (!i_like_gitea || !csrf_token) {
+        throw Error("Valid cookie is not returned");
+    }
+    const login_res = await fetch(LOGIN_PAGE_URL, {
+        headers: { Cookie: (0, utils_1.cookieToString)(temp_cookies) },
+        redirect: "manual",
+        method: "POST",
+        body: new URLSearchParams({
+            user_name: username,
+            password,
+            _csrf: csrf_token,
+        }),
+    });
+    await login_res.text();
+    const login_cookie = (0, utils_1.parseSetCookie)(login_res.headers.getSetCookie());
+    if (!login_cookie.i_like_gitea) {
+        console.log(login_cookie);
+        throw Error("Failed to login");
+    }
+    return {
+        i_like_gitea: login_cookie.i_like_gitea,
+    };
 }
-function parseSetCookie(cookie) {
-    return Object.fromEntries(cookie.map((c) => c.split(";")[0].split("=")));
-}
+exports.login_by_pass = login_by_pass;
 async function login(gitea_awesome, gitea_incredible, gitea_instance) {
     const cookie = { gitea_awesome, gitea_incredible };
     const page_res = await fetch(gitea_instance, {
-        headers: { Cookie: cookieToString(cookie) },
+        headers: { Cookie: (0, utils_1.cookieToString)(cookie) },
         redirect: "manual",
     });
-    const i_like_gitea = parseSetCookie(page_res.headers.getSetCookie()).i_like_gitea;
+    await page_res.text();
+    const i_like_gitea = (0, utils_1.parseSetCookie)(page_res.headers.getSetCookie()).i_like_gitea;
     if (!i_like_gitea) {
         throw Error("No i_like_gitea returned");
     }
     cookie.i_like_gitea = i_like_gitea;
     const LOGIN_PAGE_URL = `${gitea_instance}/user/login`;
     const login_page_res = await fetch(LOGIN_PAGE_URL, {
-        headers: { Cookie: cookieToString(cookie) },
+        headers: { Cookie: (0, utils_1.cookieToString)(cookie) },
         redirect: "manual",
     });
-    const login_cookie = parseSetCookie(login_page_res.headers.getSetCookie());
+    await login_page_res.text();
+    const login_cookie = (0, utils_1.parseSetCookie)(login_page_res.headers.getSetCookie());
     if (!login_cookie.i_like_gitea) {
         console.log(login_cookie);
         throw Error("No login cookie returned");
     }
-    return login_cookie.i_like_gitea;
+    return {
+        i_like_gitea: login_cookie.i_like_gitea,
+    };
 }
+exports.login = login;
+
+
+/***/ }),
+
+/***/ 6194:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.rerun = void 0;
+const cheerio = __importStar(__nccwpck_require__(1104));
+const utils_1 = __nccwpck_require__(2303);
 async function rerun(auth, gitea_instance, gitea_repo, workflow_file) {
-    const i_like_gitea = await login(auth.gitea_awesome, auth.gitea_incredible, gitea_instance);
     const cookie = {
-        gitea_awesome: auth.gitea_awesome,
-        gitea_incredible: auth.gitea_incredible,
-        i_like_gitea,
+        i_like_gitea: auth.i_like_gitea,
     };
     const RUN_LIST_PAGE_URL = `${gitea_instance}/${gitea_repo}/actions?workflow=${workflow_file}`;
     console.log("Fetching run url from workflow page: ", RUN_LIST_PAGE_URL);
     const run_list_page_res = await fetch(RUN_LIST_PAGE_URL, {
         headers: {
-            Cookie: cookieToString(cookie),
+            Cookie: (0, utils_1.cookieToString)(cookie),
         },
     });
     if (!run_list_page_res.ok) {
         throw Error(`Failed to fetch ${RUN_LIST_PAGE_URL}: ${run_list_page_res.status} ${run_list_page_res.statusText}`);
     }
-    const csrf_token = parseSetCookie(run_list_page_res.headers.getSetCookie())._csrf;
+    const csrf_token = (0, utils_1.parseSetCookie)(run_list_page_res.headers.getSetCookie())._csrf;
     if (!csrf_token) {
         throw Error("No csrf_token returned");
     }
     cookie._csrf = csrf_token;
-    const $ = (0, cheerio_1.load)(await run_list_page_res.text());
+    const $ = cheerio.load(await run_list_page_res.text());
     const RUN_PAGE_URL = $(".issue.list li:first-of-type .issue-item-top-row a").attr("href");
     if (!RUN_PAGE_URL) {
         throw new Error("No run found");
@@ -13858,20 +13948,40 @@ async function rerun(auth, gitea_instance, gitea_repo, workflow_file) {
     const rerun_hook_res = await fetch(RERUN_HOOK_URL, {
         method: "POST",
         headers: {
-            Cookie: cookieToString(cookie),
+            Cookie: (0, utils_1.cookieToString)(cookie),
             "X-Csrf-Token": csrf_token,
         },
     });
+    const text = await rerun_hook_res.text();
     if (!rerun_hook_res.ok) {
         throw Error(`Failed to trigger rerun: ${rerun_hook_res.status} ${rerun_hook_res.statusText}`);
     }
-    const text = await rerun_hook_res.text();
     if (text.trim() != "{}") {
         console.log(text);
         throw Error(`Failed to trigger rerun!`);
     }
     console.log("Success!");
 }
+exports.rerun = rerun;
+
+
+/***/ }),
+
+/***/ 2303:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.parseSetCookie = exports.cookieToString = void 0;
+function cookieToString(cookie) {
+    return Object.entries(cookie).map(([k, v]) => `${k}=${v}`).join("; ");
+}
+exports.cookieToString = cookieToString;
+function parseSetCookie(cookie) {
+    return Object.fromEntries(cookie.map((c) => c.split(";")[0].split("=")));
+}
+exports.parseSetCookie = parseSetCookie;
 
 
 /***/ }),

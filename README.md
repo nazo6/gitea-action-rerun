@@ -30,6 +30,13 @@ jobs:
 
 - `gitea_awesome`: `gitea_awesome` cookie
 - `gitea_incredible`: `gitea_incredible` cookie
+
+- `gitea_username`: Gitea username
+- `gitea_password`: Gitea password
+
+You must set "`gitea_awesome` and `gitea_incredible`" or "`gitea_username` and
+`gitea_password`"
+
 - `gitea_instance`: Gitea url. Must not ends with "/"
 - `gitea_repo`: Repo name in gitea. Format is `{repo}/{name}`.
 - `workflow_file`: Name of workflow file in target repo.
@@ -40,7 +47,8 @@ Currently, only latest action can be re-triggered.
 
 - This action uses cookie because there is no api to trigger gitea action. This
   causes some risk.
-  - There is no scope for cookie. So, unexpected operation may be executed.
-  - Cookie may be expired. (This can be extended by settings
-    `LOGIN_REMEMBER_DAYS` but do it at your own risk.)
+  - There is no scope for cookie or password. So, unexpected operation may be
+    executed.
+  - If you use cookie method, cookie may be expired. (This can be extended by
+    settings `LOGIN_REMEMBER_DAYS` but do it at your own risk.)
   - If gitea changed specification, this action may not work.
